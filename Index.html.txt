@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Digital Store</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #fff; line-height: 1.5; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+    header { text-align: center; margin-bottom: 50px; }
+    h1 { font-size: 2.2rem; margin-bottom: 8px; }
+    .subtitle { color: #aaa; font-size: 1.1rem; }
+    .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+    .card { background: #1a1a1a; border-radius: 16px; padding: 24px; border: 1px solid #2a2a2a; }
+    .card img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 16px; background: #333; }
+    .card h3 { font-size: 1.25rem; margin-bottom: 8px; }
+    .card p { color: #bbb; font-size: 0.95rem; margin-bottom: 16px; min-height: 48px; }
+    .price { font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; color: #4ade80; }
+    .btn { display: block; width: 100%; padding: 14px; background: #f7931a; color: #000; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .btn:hover { background: #ffb84d; }
+    
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal-content { background: #1a1a1a; border-radius: 16px; padding: 30px; max-width: 420px; width: 100%; text-align: center; border: 1px solid #333; position: relative; }
+    .modal h2 { margin-bottom: 8px; }
+    .modal .usd { color: #4ade80; font-size: 1.3rem; margin-bottom: 4px; }
+    .modal .btc-amount { font-size: 1.6rem; font-weight: 700; margin: 12px 0; color: #f7931a; }
+    .address-box { background: #111; padding: 14px; border-radius: 10px; word-break: break-all; font-family: monospace; font-size: 0.9rem; margin: 16px 0; }
+    .copy-btn { margin-top: 10px; padding: 10px 20px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+    .qr { margin: 20px auto; background: #fff; padding: 12px; border-radius: 12px; display: inline-block; }
+    .instructions { text-align: left; background: #111; padding: 16px; border-radius: 10px; font-size: 0.9rem; color: #ccc; margin-top: 20px; }
+    .close { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>My Digital Store</h1>
+      <p class="subtitle">Pay with Bitcoin only • Instant digital delivery</p>
+    </header>
+
+    <div class="products" id="products"></div>
+  </div>
+
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2 id="modalTitle">Product Name</h2>
+      <div class="usd" id="modalUsd">$0.00 USD</div>
+      <div class="btc-amount" id="modalBtc">Loading BTC amount...</div>
+      
+      <p style="margin: 16px 0 8px; color:#aaa;">Send exactly this amount to:</p>
+      <div class="address-box" id="btcAddress">YOUR_BTC_ADDRESS_HERE</div>
+      <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
+      
+      <div class="qr" id="qrCode"></div>
+      
+      <div class="instructions">
+        <strong>How to pay:</strong><br>
+        1. Copy the address or scan the QR code<br>
+        2. Send the exact BTC amount shown above
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== EDIT THESE 3 THINGS ==========
+    const BTC_ADDRESS = "bc1qsl26ffdva52wzqk8yjr4myl3aqap4fzl7yypf5";
+    const YOUR_EMAIL = "casamigo06@gmail.com";
+    const SHOP_NAME = "SI HOUSE ";
+    // ========================================
+
+    const products = [
+      {
+        id: 1,
+        name: "HIGH BALANCE CC",
+        description: "Non VBV Non Region locked credit card in online format ( #/CVV/EXP/Address/Name/IP address ) with a guaranteed balance between 3K and 9k. Note: backed by a refund or replacement guarantee you also get my full support via telegram with your purchase. If you're a beginner it is strongly suggested you simply participate in an assisted cashout option where all work is done on my end and you don't handle or buy a card.",
+        priceUSD: 55.00,
+        image: "https://iili.io/ntQ2Yfj.png"
+      },
+      {
+        id: 2,
+        name: "HIGH BALANCE DEBIT",
+        description: "Non VBV Non Region locked Debit Card in online format ( #/CVV/EXP/Address/Name/IP address ) with a guaranteed balance between 5k and 10k. Note: you get my full support via telegram with your purchase. This purchase is backed by a refund/replacment guarantee. If you're a beginner it is strongly suggested you simply participate in an assisted cashout option where all work is done on my end and you don't handle or buy a card.",
+        priceUSD: 80.00,
+        image: "https://iili.io/ntQ25ib.png"
+      },
+      {
+        id: 3,
+        name: "PAYPAL LOG",
+        description: "PayPal login with a guaranteed balance of 1k-2k. 2 step access is provided via the login to the attached email. Note: this purchase is back by a refund policy and my full support via telegram. If you're a beginner it is strongly suggested you simply participate in an assisted cashout option where all work is done on my end and you don't handle or buy a card.",
+        priceUSD: 55.00,
+        image: "https://iili.io/ntQ2RWu.png"
+      },
+      {
+        id: 4,
+        name: "2026/27 CC TO BITCOIN METHOD",
+        description: "Complete method including a High balance CC, a Non-KYC site for buying bitcoin, a swapping site and all needed apps and steps to complete the process. Guaranteed to make between 3k and 9k per time you do it (due to the fact it can be repeated with CC's from elsewhere there's a break off fee of 150$ BTC paid to me after the first time you hit/cashout with it)",
+        priceUSD: 150.00,
+        image: "https://iili.io/ntQ2Tb9.png"
+      },
+      {
+        id: 5,
+        name: "FULLZ + ID SCAN",
+        description: "Full SSN|Name|DOB|Address| With ID Scan. Guaranteed Above 600 On The Credit Score. Note: you get my full support via telegram with your purchase ( backed by a refund or replacement guarantee ).",
+        priceUSD: 65.00,
+        image: "https://iili.io/ntQ2Gb1.png"
+      },
+      {
+        id: 6,
+        name: "DUMP ( T1+T2 AND IST FORMAT)",
+        description: "Dump with track 1+2 data and pin ( also formatted into IST for use with omnikey on the chip ) guaranteed balance between 2k and 5k. Note: you get my full support via telegram with your purchase ( backed by a refund or replacement guarantee ).",
+        priceUSD: 65.00,
+        image: "https://iili.io/ntQ2WWg.png"
+      },
+      {
+        id: 7,
+        name: "CHASE BANK",
+        description: "Chase bank login with two step access provided via the email attached to the provided account. Guaranteed balance of 2k-5k inside. Note: you get my full support via telegram with your purchase ( backed by a refund or replacement guarantee )",
+        priceUSD: 55.00,
+        image: "https://iili.io/ntQ2jqJ.png"
+      },
+      {
+        id: 8,
+        name: "MEDIUM BALANCE DEBIT",
+        description: "Non VBV Non Region locked Debit Card in online format ( #/CVV/EXP/Address/Name/IP address ) with a guaranteed balance between 1K and 3K. Note: you get my full support via telegram with your purchase. This purchase is backed by a refund/replacment guarantee. If you're a beginner it is strongly suggested you simply participate in an assisted cashout option where all work is done on my end and you don't handle or buy a card.",
+        priceUSD: 40.00,
+        image: "https://iili.io/ntQ2NgR.png"
+      },
+      {
+        id: 9,
+        name: "MEDIUM BALANCE CC",
+        description: "Non VBV Non Region locked medium balance credit card in online format ( #/CVV/EXP/Address/Name/IP address ) with a guaranteed balance between 1k and 2k. Note: backed by a refund or replacement guarantee you also get my full support via telegram with your purchase. If you're a beginner it is strongly suggested you simply participate in an assisted cashout option where all work is done on my end and you don't handle or buy a card.",
+        priceUSD: 45.00,
+        image: "https://iili.io/ntQ2gXn.png"
+      },
+      {
+        id: 10,
+        name: "EMV SOFTWARE",
+        description: "EMV Software ( MSR + ATR GOD). This is intended for use with MSR and omni-key hardware it allows you to encode dump data (Track 1+2) on a blank or old debit. ATR god is used to encode the chip.",
+        priceUSD: 120.00,
+        image: "https://iili.io/ntQ2rss.png"
+      }
+    ];
+
+    let btcPrice = null;
+
+    function renderProducts() {
+      const container = document.getElementById('products');
+      container.innerHTML = products.map(p => `
+        <div class="card">
+          <img src="${p.image}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <div class="price">$${p.priceUSD.toFixed(2)}</div>
+          <button class="btn" onclick="openPayment(${p.id})">Buy with Bitcoin</button>
+        </div>
+      `).join('');
+    }
+
+    async function fetchBtcPrice() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        const data = await res.json();
+        btcPrice = data.bitcoin.usd;
+      } catch (e) {
+        btcPrice = 95000;
+      }
+    }
+
+    async function openPayment(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      document.getElementById('modalTitle').textContent = product.name;
+      document.getElementById('modalUsd').textContent = `$${product.priceUSD.toFixed(2)} USD`;
+      document.getElementById('modalBtc').textContent = 'Calculating...';
+      document.getElementById('btcAddress').textContent = BTC_ADDRESS;
+
+      document.querySelector('.instructions').innerHTML = `
+        <strong>How to pay:</strong><br>
+        1. Copy the address or scan the QR code<br>
+        2. Send the exact BTC amount shown above
+      `;
+
+      document.getElementById('paymentModal').style.display = 'flex';
+
+      if (!btcPrice) await fetchBtcPrice();
+      const btcAmount = (product.priceUSD / btcPrice).toFixed(8);
+      document.getElementById('modalBtc').textContent = `${btcAmount} BTC`;
+
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${BTC_ADDRESS}`;
+      document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR Code" width="180" height="180">`;
+    }
+
+    function closeModal() {
+      document.getElementById('paymentModal').style.display = 'none';
+    }
+
+    function copyAddress() {
+      navigator.clipboard.writeText(BTC_ADDRESS).then(() => {
+        alert('Address copied!');
+      });
+    }
+
+    document.querySelector('h1').textContent = SHOP_NAME;
+    renderProducts();
+    fetchBtcPrice();
+  </script>
+</body>
+</html>
